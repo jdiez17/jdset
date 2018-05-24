@@ -5,8 +5,11 @@ export default class Home extends React.Component {
   // render
   render() {
     return (
-      <div className="page-home">
-        <h4>Hello world!</h4>
+      <div>
+        <h3>Hello!</h3>
+        <p>
+          Welcome to Jose Diez's Space Engineering Toolkit. Click on one of the links above to get started.
+        </p>
       </div>
     );
   }
