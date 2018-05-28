@@ -7,14 +7,14 @@ export default class App extends React.Component {
   // render
   render() {
     return (
-			<div>
-				<div>
-					<Navigation/>
-				</div>
-				<div className="container">
-					{this.props.children}
-				</div>
-			</div>
+      <div>
+          <div>
+              <Navigation/>
+          </div>
+          <div className="container">
+              {this.props.children}
+          </div>
+      </div>
     );
   }
 }

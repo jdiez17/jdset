@@ -2,7 +2,7 @@ import React from "react";
 import Plot from "react-plotly.js";
 import { Label, Form, FormGroup, Input, Button, Col, Progress } from "reactstrap";
 
-import SPESimulator from "../math/spe_sim";
+import SPESimulator from "math/spe_sim";
 
 // Home page component
 export default class SolarPanelEfficiency extends React.Component {
@@ -103,7 +103,7 @@ export default class SolarPanelEfficiency extends React.Component {
           Analyze on GEO Satellites Output Power Variation (Zheng, J., Chen, H., CITCS 2012).</a>
         </p>
 
-        <Form id="simulationParameters" className="bg-light rounded">
+        <Form className="bg-light rounded controls">
           <FormGroup row>
             <Col sm={4}>
               <Label for="duration">

@@ -7,6 +7,7 @@ import OrbitControls from 'orbit-controls-es6';
 //import TrackballControls from 'three-trackballcontrols';
 
 import OPSForm from "./OPSForm";
+import simulateKeplerOrbit from "math/kepler";
 
 const EARTH_TEXTURE_URL = "media/pattern_reduced.jpg"
 
@@ -15,7 +16,7 @@ export default class OrbitalParameterSimulator extends React.Component {
     super(props, context);
 
     this.state = {
-      cameraPosition: new THREE.Vector3(0, 0, 5),
+      cameraPosition: new THREE.Vector3(3, 3, 3),
       cameraRotation: new THREE.Euler(),
       lightPosition: new THREE.Vector3(5, 3, 5),
       equatorialPlaneRotation: new THREE.Euler(THREE.Math.degToRad(90), 0, 0),
@@ -23,7 +24,7 @@ export default class OrbitalParameterSimulator extends React.Component {
     };
 
     this._onAnimate = this._onAnimate.bind(this);
-    this._addRandomPlane = this._addRandomPlane.bind(this);
+    this._addOrbit = this._addOrbit.bind(this);
   }
 
   _onAnimate() {
@@ -36,12 +37,6 @@ export default class OrbitalParameterSimulator extends React.Component {
   componentDidMount() {
     this.controls = new OrbitControls(this.refs.camera, this.refs.react3_element);
 
-    /*
-    this.controls.enabled = true;
-    this.controls.maxDistance = 1500;
-    this.controls.minDistance = 0;
-    */
-
     this.controls.addEventListener('change', () => {
       this.setState({
         cameraPosition: this.refs.camera.position.clone(),
@@ -53,31 +48,29 @@ export default class OrbitalParameterSimulator extends React.Component {
     this.refs.scene.add(axes);
   }
 
-  _addRandomPlane() {
-    const i = THREE.Math.degToRad(Math.random() * 360); //Math.random() * 360; // inclination (rad)
-    const w = THREE.Math.degToRad(Math.random() * 360); // argument of periapsis (rad)
-    const omega = THREE.Math.degToRad(Math.random() * 360); // longitude of ascending node (radk)
-    const a = 3; // semi-major axis
-    const c = 7; // linear eccentricity
-    const e = c/a; // numerical eccentricity
-    const b = Math.sqrt(Math.pow(a, 2) - Math.pow(e, 2)); // semi-minor axis
+  _addOrbit(i_deg, w_deg, omega_deg, e, n) {
+    const result = simulateKeplerOrbit(e, n);
+    var vertices = result.vertices.map((vert) => new THREE.Vector3(vert[0], vert[1], 0));
+    vertices.push(...result.vertices.map((vert) => new THREE.Vector3(vert[0], -vert[1], 0)));
 
+    // rotation constants
+    const i = THREE.Math.degToRad(i_deg); // inclination (rad)
+    const omega = THREE.Math.degToRad(omega_deg); // longitude of ascending node (rad)
+    const w = THREE.Math.degToRad(w_deg); // argument of periapsis (rad)
+
+    // plane rotation and position
+    // TODO figure out the fudge factors
+    //const rotation = new THREE.Euler(THREE.Math.degToRad(90) + i, THREE.Math.degToRad(75) + omega, w);
     const rotation = new THREE.Euler(THREE.Math.degToRad(90) + i, omega, w);
+    const orbitPosition = new THREE.Vector3(result.ellipse.c, 0, 0).applyEuler(rotation);
 
-    // This allows us to move the orbit shape to make the central body
-    // be in one of the foci of the ellipse. TODO figure out why e + 1.
-    // I think 1 comes from the radius of the Earth in this coordinate
-    // system. But I would have expected to use the linear eccentricity
-    // instead of the numerical eccentricity.
-    const orbitPosition = new THREE.Vector3(-e + 1, 0, 0).applyEuler(rotation);
-
-    // The orbital plane
+    // The orbital plane mesh
     const color = Math.floor(Math.random() * 0xffffff);
     const padding = 0.5;
 
     this.state.additionalObjects.push(
       <mesh rotation={rotation} position={orbitPosition}>
-        <planeGeometry width={a * 2 + padding} height={b * 2 + padding} />
+        <planeGeometry width={result.ellipse.a * 2 + padding} height={result.ellipse.b * 2 + padding} />
         <meshBasicMaterial
           side={THREE.DoubleSide}
           color={color}
@@ -87,58 +80,7 @@ export default class OrbitalParameterSimulator extends React.Component {
       </mesh>
     )
 
-    var vertices_pos = [];
-    var vertices_neg = [];
-    const steps = 120;
-    for(var it = 0; it <= steps; it++) {
-      const x = -a + ((a * 2) / steps) * it;
-      const y = (b / a) * Math.sqrt(Math.pow(a, 2) - Math.pow(x, 2));
-
-      vertices_pos.push(
-        new THREE.Vector3(x, y, 0),
-      );
-      vertices_neg.push(
-        new THREE.Vector3(x, -y, 0)
-      );
-    }
-    const vertices = vertices_pos.concat(vertices_neg);
-
-    /*
-    var vertices = [];
-    for(var M = 0; M < 2 * Math.PI; M += 0.1) {
-      var E = M;
-
-      // Calculate eccentric anomaly using Newton's Method
-      console.log("calculating E, M=" + M);
-      while(true) {
-        var dE = (E - e * Math.sin(E) - M)/(1 - e * Math.cos(E));
-        E -= dE;
-        if(Math.abs(dE) < 1e-2) break;
-      }
-      console.log("done");
-
-      // TODO figure this out
-      const P = a * (Math.cos(E) - other_e);
-      const Q = a * Math.sin(E) * Math.sqrt(1 - Math.pow(other_e, 2));
-
-      // rotate by argument of perigee
-      var x = Math.cos(w) * P - Math.sin(w) * Q;
-      var y = Math.sin(w) * P + Math.cos(w) * Q;
-
-      // rotate by inclination
-      var z = Math.sin(i) * x;
-          x = Math.cos(i) * x;
-
-      // rotate by longitude of ascending node
-      var xtemp = x;
-
-      x = Math.cos(omega) * xtemp - Math.sin(omega) * y;
-      y = Math.sin(omega) * xtemp + Math.cos(omega) * y;
-      vertices.push(new THREE.Vector3(x, y, z));
-    }
-    */
-
-    // The orbit ellipse
+    // The orbit ellipse mesh (line)
     this.state.additionalObjects.push(
       <line rotation={rotation} position={orbitPosition}>
         <geometry vertices={vertices} />
@@ -149,23 +91,21 @@ export default class OrbitalParameterSimulator extends React.Component {
     this.setState({
       additionalObjects: this.state.additionalObjects.slice(0)
     })
-
-    console.log("adding random plane");
   }
 
   render() {
-    const width = 600; // canvas width
-    const height = 800; // canvas height
+    const width = 900; // canvas width
+    const height = 600; // canvas height
 
     return (
       <div>
         <OPSForm
-          onAddRandomPlane={this._addRandomPlane}
-          onClearPlanes={() => this.setState({additionalObjects: []})}
+          onAddOrbit={this._addOrbit}
+          onClearOrbits={() => this.setState({additionalObjects: []})}
           ref="form"
         />
 
-        <div ref="react3_element">
+        <div className="container" ref="react3_element">
           <React3
             mainCamera="camera" // this points to the perspectiveCamera which has the name set to "camera" below
             width={width}
@@ -201,7 +141,7 @@ export default class OrbitalParameterSimulator extends React.Component {
                 </meshPhongMaterial>
               </mesh>
 
-              <mesh name="equatorial" rotation={this.state.equatorialPlaneRotation}>
+              <mesh name="equatorial" rotation={this.state.equatorialPlaneRotation} visible={false}>
                 <planeGeometry width={4} height={4} />
                 <meshBasicMaterial
                   side={THREE.DoubleSide}
@@ -213,34 +153,29 @@ export default class OrbitalParameterSimulator extends React.Component {
               {this.state.additionalObjects}
             </scene>
           </React3>
-
-          <Form className="bg-light rounded controls">
-            <FormGroup row className="check-inline">
-              <Col sm={6}>
-                <Label check><Input id="show_equatorial" type="checkbox" />Show equatorial plane</Label>
-              </Col>
-              <Col sm={6}>
-                <Label check><Input id="show_true_anomaly" type="checkbox" />Show true anomaly</Label>
-              </Col>
-            </FormGroup>
-
-            <FormGroup row className="check-inline">
-              <Col sm={6}>
-                <Label check><Input id="show_nodes" type="checkbox" />Show nodes</Label>
-              </Col>
-            </FormGroup>
-
-            <hr />
-
-            <Input id="slider" type="range" />
-            <Label for="slider">t = 127.36 days</Label>
-
-            <FormGroup row>
-              <Col>
-              </Col>
-            </FormGroup>
-          </Form>
         </div>
+
+        <Form className="bg-light rounded controls">
+          <FormGroup check>
+            <Label check><Input id="show_equatorial" type="checkbox"/>Show equatorial plane</Label>
+          </FormGroup>
+          <FormGroup check>
+            <Label check><Input id="show_true_anomaly" type="checkbox" />Show true anomaly</Label>
+          </FormGroup>
+          <FormGroup check>
+            <Label check><Input id="show_nodes" type="checkbox" />Show nodes</Label>
+          </FormGroup>
+
+          <hr />
+
+          <Input id="slider" type="range" />
+          <Label for="slider">t = 127.36 days</Label>
+
+          <FormGroup row>
+            <Col>
+            </Col>
+          </FormGroup>
+        </Form>
     </div>);
   }
 }

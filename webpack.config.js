@@ -6,6 +6,11 @@ var CleanWebpackPlugin = require('clean-webpack-plugin');
 
 module.exports = {
   app_root: app_root, // the app root folder, needed by the other webpack configs
+  resolve: {
+    root: [
+      path.resolve(app_root)
+    ]
+  },
   entry: [
     // http://gaearon.github.io/react-hot-loader/getstarted/
     'webpack-dev-server/client?http://localhost:8080',

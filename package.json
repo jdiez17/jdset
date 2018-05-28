@@ -1,22 +1,18 @@
 {
-  "name": "redux-minimal",
-  "version": "1.0.0",
-  "description": "Start building complex react-redux apps today, with this minimalist easy to understand starter kit (boilerplate)",
+  "name": "jdset",
+  "version": "0.0.1",
+  "description": "",
   "keywords": [
-    "react",
-    "redux",
-    "minimal",
-    "starter kit",
-    "boilerplate"
+    "space",
+    "engineering"
   ],
   "main": "index.js",
-  "homepage": "http://redux-minimal.js.org/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/catalin-luntraru/redux-minimal"
+    "url": "https://git.sr.ht/~jdiez/jdset"
   },
   "scripts": {
-    "start": "webpack-dev-server --inline --hot --history-api-fallback --host localhost --port 8080",
+    "start": "webpack-dev-server --watch-poll --inline --hot --history-api-fallback --host localhost --port 8080",
     "build-dev": "webpack --config webpack.dev.config.js",
     "build-prod": "webpack -p --config webpack.prod.config.js",
     "test": "mocha --recursive --compilers js:babel-register --require babel-polyfill --require ignore-styles",
@@ -29,7 +25,7 @@
       "stage-3"
     ]
   },
-  "author": "Catalin Luntraru",
+  "author": "Jose Diez",
   "license": "MIT",
   "dependencies": {
     "orbit-controls-es6": "^1.0.12",
@@ -47,8 +43,7 @@
     "redux": "^3.6.0",
     "redux-form": "^6.4.3",
     "redux-saga": "^0.14.3",
-    "three": "^0.92.0",
-    "three-trackballcontrols": "0.0.7"
+    "three": "^0.92.0"
   },
   "devDependencies": {
     "babel-core": "^6.21.0",
@@ -71,7 +66,7 @@
     "sass-loader": "^4.1.1",
     "style-loader": "^0.13.1",
     "webpack": "^1.14.0",
-    "webpack-dev-server": "^1.16.2",
+    "webpack-dev-server": "^1.16.5",
     "whatwg-fetch": "^2.0.1"
   }
 }
